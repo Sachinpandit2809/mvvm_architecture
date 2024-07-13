@@ -1,21 +1,30 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:mvvm_architecture/data/app_exception.dart';
 import 'package:mvvm_architecture/data/network/BaseApiServices.dart';
 import 'package:http/http.dart' as http;
 
 class NetworkApiServices extends BaseApiServices {
+  Map<String, String> header = {
+    "Accept": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    'Access-Control-Allow-Headers': 'Content-Type',
+    "content-type": "application/json",
+  };
+  Duration timeOut =const Duration(seconds: 30);
+
   @override
   Future getGetApiResponse(String url) async {
     dynamic responseJson;
     try {
       final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+          await http.get(Uri.parse(url)).timeout(timeOut);
       responseJson = returnResponse(response);
     } on SocketException {
-      throw FetchDataException("internet connection");
+      throw FetchDataException(" No internet connection");
     }
     return responseJson;
   }
@@ -23,13 +32,18 @@ class NetworkApiServices extends BaseApiServices {
   @override
   Future getPostApiResponse(String url, dynamic data) async {
     dynamic responseJson;
+
     try {
-      Response response = await post(Uri.parse(url), 
-      body: data)
-          .timeout(const Duration(seconds: 10));
+      Response response =
+          await post(headers: header, Uri.parse(url), body: jsonEncode(data))
+              .timeout(timeOut);
       responseJson = returnResponse(response);
     } on SocketException {
-      throw FetchDataException("internet connection");
+      throw FetchDataException(" No internet connection");
+    }
+    ///// editing itself 13.07.24
+    catch (e) {
+      debugPrint(e.toString());
     }
     return responseJson;
   }
@@ -38,6 +52,7 @@ class NetworkApiServices extends BaseApiServices {
     switch (response.statusCode) {
       case 200:
         dynamic responseJson = jsonDecode(response.body);
+        debugPrint("printing from networkapiservices $responseJson");
         return responseJson;
 
       case 400:
